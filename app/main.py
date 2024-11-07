@@ -77,6 +77,7 @@ async def clear_ocr_cache():
 class OllamaGenerateRequest(BaseModel):
     model: str
     prompt: str
+    generate_tags_summary: bool = False
 
 class OllamaPullRequest(BaseModel):
     model: str
@@ -113,6 +114,28 @@ async def generate_llama(request: OllamaGenerateRequest):
             ollama.pull(request.model)
 
         raise HTTPException(status_code=500, detail="Failed to generate text with Ollama API")
+
+    generated_text = response.get("response", "")
+    return {"generated_text": generated_text}
+
+@app.post("/llm_tags_summary")
+async def generate_tags_summary(request: OllamaGenerateRequest):
+    """
+    Endpoint to generate tags and summary using Llama 3.1 model (and other models) via the Ollama API.
+    """
+    print(request)
+    if not request.prompt:
+        raise HTTPException(status_code=400, detail="No prompt provided")
+
+    try:
+        response = ollama.generate(request.model, request.prompt)
+    except ollama.ResponseError as e:
+        print('Error:', e.error)
+        if e.status_code == 404:
+            print("Error: ", e.error)
+            ollama.pull(request.model)
+
+        raise HTTPException(status_code=500, detail="Failed to generate tags and summary with Ollama API")
 
     generated_text = response.get("response", "")
     return {"generated_text": generated_text}

@@ -59,7 +59,27 @@ def ocr_task(self, pdf_bytes, strategy_name, pdf_hash, ocr_cache, prompt, model)
             num_chunk += 1
             extracted_text += chunk['response']
 
+    # Optional call to generate tags and summary
+    if prompt and model:
+        tags_summary = generate_tags_summary(prompt, model)
+        extracted_text += "\n\nTags and Summary:\n" + tags_summary
+
     self.update_state(state='DONE', meta={'progress': 100 , 'status': 'Processing done!', 'start_time': start_time, 'elapsed_time': time.time() - start_time})  # Example progress update
 
-
     return extracted_text
+
+def generate_tags_summary(prompt, model):
+    """
+    Function to generate tags and summary using the LLM.
+    """
+    try:
+        response = ollama.generate(model, prompt)
+    except ollama.ResponseError as e:
+        print('Error:', e.error)
+        if e.status_code == 404:
+            print("Error: ", e.error)
+            ollama.pull(model)
+        raise Exception("Failed to generate tags and summary with Ollama API")
+
+    generated_text = response.get("response", "")
+    return generated_text

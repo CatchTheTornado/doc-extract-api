@@ -82,6 +82,14 @@ def llm_generate(prompt, model = 'llama3.1'):
     else:
         print(f"Failed to generate text: {response.text}")
 
+def llm_tags_summary(prompt, model = 'llama3.1'):
+    ollama_tags_summary_url = os.getenv('LLM_TAGS_SUMMARY_API_URL', 'http://localhost:8000/llm_tags_summary')
+    response = requests.post(ollama_tags_summary_url, json={"model": model, "prompt": prompt})
+    if response.status_code == 200:
+        print(response.json().get('generated_text'))
+    else:
+        print(f"Failed to generate tags and summary: {response.text}")
+
 def main():
     parser = argparse.ArgumentParser(description="CLI for OCR and Ollama operations.")
     subparsers = parser.add_subparsers(dest='command', help='Sub-command help')
@@ -114,6 +122,10 @@ def main():
     ollama_pull_parser = subparsers.add_parser('llm_pull', help='Pull the latest Llama model from the Ollama API')   
     ollama_pull_parser.add_argument('--model', type=str, default='llama3.1', help='Model to pull from the Ollama API')
 
+    # Sub-command for generating tags and summary
+    ollama_tags_summary_parser = subparsers.add_parser('llm_tags_summary', help='Generate tags and summary using the Ollama endpoint')
+    ollama_tags_summary_parser.add_argument('--prompt', type=str, required=True, help='Prompt for the Ollama model')
+    ollama_tags_summary_parser.add_argument('--model', type=str, default='llama3.1', help='Model to use for the Ollama endpoint')
 
     args = parser.parse_args()
 
@@ -140,6 +152,8 @@ def main():
         llm_generate(args.prompt, args.model)
     elif args.command == 'llm_pull':
         llm_pull(args.model)
+    elif args.command == 'llm_tags_summary':
+        llm_tags_summary(args.prompt, args.model)
     else:
         parser.print_help()
 
